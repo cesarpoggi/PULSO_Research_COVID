@@ -1,0 +1,305 @@
+---
+title: "COVID 1"
+author: "Cesar Poggi"
+date: '2022-07-16'
+output: html_document
+---
+
+```{r}
+#library(htmltab)
+#link= "https://www.worldometers.info/coronavirus/"
+#path="/html/body/div[3]/div[3]/div/div[6]/div[1]/div/table"
+#dataWOCOVID = htmltab(link, path)
+#head(dataWOCOVID)
+```
+
+TABLA POR REGIONES LISTA >>> FUENTE WORLDOMETER >>>
+```{r}
+library(tidyverse)
+library(rvest)
+
+url <- "https://www.worldometers.info/coronavirus/"
+
+my_table <- url%>%read_html()%>%html_table()%>%.[[1]]
+
+# There are some "+" symbols and the "," 
+# for the thousand separators that we wan to remove them
+
+my_table[]<-lapply(my_table, function(x) (gsub("\\,|\\+", "", (x))))
+
+# convert all but the first and last column to numeric
+
+my_table[,c(3:15)] <- sapply(my_table[c(3:15)],as.numeric)
+
+my_table[,c(1,4,6,7,9,10:22)]=NULL
+my_table <- my_table[-c(7:246),]
+```
+
+
+TABLA POR PAISES DE LATAM LISTA >>> FUENTE WORLDOMETER >>>>
+```{r}
+library(tidyverse)
+library(rvest)
+
+url <- "https://www.worldometers.info/coronavirus/"
+
+my_tableLATAM <- url%>%read_html()%>%html_table()%>%.[[1]]
+
+# There are some "+" symbols and the "," 
+# for the thousand separators that we wan to remove them
+
+my_tableLATAM[]<-lapply(my_tableLATAM, function(x) (gsub("\\,|\\+", "", (x))))
+
+# convert all but the first and last column to numeric
+
+my_tableLATAM[,c(3:15)] <- sapply(my_tableLATAM[c(3:15)],as.numeric)
+
+my_tableLATAM[,c(1,4,6:9,10,14,16:22)]=NULL
+my_tableLATAM <- my_tableLATAM [c(11,22,26,27,39,45,69,74,77,78,79,80,82,86,90,95),]
+```
+
+
+
+GRAFICO DE MUERTES POR PAISES ACUMULADA >>> DATA DE LA WHO >>>>
+```{r}
+library(rio)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+dataCASOSACU=import("muertes_acumuladas3.0.csv", encoding = 'UTF-8')
+colnames(dataCASOSACU)<-dataCASOSACU[2,]
+dataCASOSACU <- dataCASOSACU [-c(1,2),]
+
+colnames(dataCASOSACU)[c(1)]<-c("Date")
+dataCASOSACU$Date <- as.Date( dataCASOSACU$Date, '%d/%m/%Y')
+dataCASOSACU[,c(2:11)] <- sapply(dataCASOSACU[c(2:11)],as.numeric)
+colnames(dataCASOSACU)[c(6)]<-c("LatinAmerica")
+colnames(dataCASOSACU)[c(7)]<-c("NorthAmerica")
+
+#COLORES SELECCIONADOS PARA ESCALA DE GRISES
+
+fig <- plot_ly(dataCASOSACU, type = 'scatter', mode = 'lines', stackgroup = 'one')%>%
+  add_trace(x = ~Date, y = ~Oceania, name = 'Oceania', line = list(color = 'rgb(247,247,247)', width = 4))%>%
+  add_trace(x = ~Date, y = ~Africa, name = 'Africa', line = list(color = 'rgb(217,217,217)', width = 4))%>%
+  add_trace(x = ~Date, y = ~NorthAmerica, name = 'NorthAmerica', line = list(color = 'rgb(189,189,189)', width = 4))%>%
+  add_trace(x = ~Date, y = ~Asia, name = 'Asia', line = list(color = 'rgb(150,150,150)', width = 4))%>%
+  add_trace(x = ~Date, y = ~Europe, name = 'Europe', line = list(color = 'rgb(99,99,99)', width = 4))%>%
+  add_trace(x = ~Date, y = ~LatinAmerica, name = 'Latin America', line = list(color = 'rgb(37,37,37)', width = 4))%>%
+  layout(showlegend = T)
+
+#COLORES RANDOM 
+
+fig <- plot_ly(dataCASOSACU, type = 'scatter', mode = 'lines', stackgroup = 'one')%>%
+  add_trace(x = ~Date, y = ~Oceania, name = 'Oceania', line = list(width = 4))%>%
+  add_trace(x = ~Date, y = ~Africa, name = 'Africa', line = list(width = 4))%>%
+  add_trace(x = ~Date, y = ~NorthAmerica, name = 'NorthAmerica', line = list(width = 4))%>%
+  add_trace(x = ~Date, y = ~Asia, name = 'Asia', line = list(width = 4))%>%
+  add_trace(x = ~Date, y = ~Europe, name = 'Europe', line = list(width = 4))%>%
+  add_trace(x = ~Date, y = ~LatinAmerica, name = 'Latin America', line = list(width = 4))%>%
+  layout(showlegend = T)
+
+
+fig <- fig %>% layout(yaxis = list(title = 'Muertes de Covid-19 (a 11 de Agosto 2022)'))
+fig <- fig %>% layout(xaxis = list(title = 'Fecha'))
+fig <- fig %>% layout(showlegend = TRUE, legend = list(font = list(size = 15)))
+fig
+```
+
+
+```{r}
+dataCASOSNEW=import("nuevos_casos2.0.csv", encoding = 'UTF-8')
+colnames(dataCASOSNEW)<-dataCASOSNEW[2,]
+dataCASOSNEW <- dataCASOSNEW [-c(1,2),]
+
+colnames(dataCASOSNEW)[c(1)]<-c("Date")
+dataCASOSNEW$Date <- as.Date( dataCASOSNEW$Date, '%d/%m/%Y')
+dataCASOSNEW[,c(2:8)] <- sapply(dataCASOSNEW[c(2:8)],as.numeric)
+colnames(dataCASOSNEW)[c(6)]<-c("LatinAmerica")
+
+fig2 <- plot_ly(dataCASOSNEW, type = 'scatter', mode = 'line')%>%
+  add_trace(x = ~Date, y = ~Oceania, name = 'Oceania')%>%
+  add_trace(x = ~Date, y = ~Africa, name = 'Africa')%>%
+  add_trace(x = ~Date, y = ~Americas, name = 'Americas')%>%
+  add_trace(x = ~Date, y = ~Asia, name = 'Asia')%>%
+  add_trace(x = ~Date, y = ~Europe, name = 'Europe')%>%
+  add_trace(x = ~Date, y = ~LatinAmerica, name = 'Latin America')%>%
+  layout(showlegend = T)
+
+fig2 <- fig2 %>% layout(yaxis = list(title = 'Nuevos casos confirmados de Covid-19 (a Julio 2022)'))
+fig2 <- fig2 %>% layout(xaxis = list(title = 'Fecha'))
+fig2
+```
+
+
+
+<<< FUENTE OUR WORLD IN DATA <<<
+LATAM
+```{r}
+library(janitor)
+
+data2=import("owid-covid-data3.csv", encoding = 'UTF-8')
+
+options(scipen = 999)
+
+dataLATAM <- data2 %>%
+  filter(continent2 == 'Latin America')
+dataLATAM[,-c(1,2,3,4,5,9,15,50)] = NULL
+dataLATAM[,c(6:8)] <- sapply(dataLATAM[c(6:8)],as.numeric)
+dataLATAM$date <- as.Date(dataLATAM$date, '%d/%m/%Y')
+
+dataLATAM <- dataLATAM %>%
+  filter(date == '2022/08/09')
+
+dataLATAM <- dataLATAM %>%
+  adorn_totals("row")
+
+#Calcular muertes por millón de toda la región
+
+dataLATAM$MuerMillonRegion = ((dataLATAM$total_deaths*1000000)/dataLATAM$population)
+dataLATAM[17, 2]<-"Latin America"
+dataLATAM <- dataLATAM [-c(1:16),]
+```
+
+EURO
+```{r}
+dataEURO <- data2 %>%
+  filter(continent2 == 'Europe')
+dataEURO[,-c(1,2,3,4,5,9,15,50)] = NULL
+dataEURO[,c(6:8)] <- sapply(dataEURO[c(6:8)],as.numeric)
+dataEURO$date <- as.Date(dataEURO$date, '%d/%m/%Y')
+
+dataEURO <- dataEURO %>%
+  filter(date == '2022/08/09')
+
+dataEURO <- dataEURO %>%
+  adorn_totals("row")
+
+#Calcular muertes por millón de toda la región
+
+dataEURO$MuerMillonRegion = ((dataEURO$total_deaths*1000000)/dataEURO$population)
+dataEURO[50, 2]<-"Europe"
+dataEURO <- dataEURO [-c(1:49),]
+```
+
+ASIA
+```{r}
+dataASIA <- data2 %>%
+  filter(continent2 == 'Asia')
+dataASIA[,-c(1,2,3,4,5,9,15,50)] = NULL
+dataASIA[,c(6:8)] <- sapply(dataASIA[c(6:8)],as.numeric)
+dataASIA$date <- as.Date(dataASIA$date, '%d/%m/%Y')
+
+dataASIA <- dataASIA %>%
+  filter(date == '2022/08/09')
+
+dataASIA <- dataASIA %>%
+  adorn_totals("row")
+
+#Calcular muertes por millón de toda la región
+
+dataASIA$MuerMillonRegion = ((dataASIA$total_deaths*1000000)/dataASIA$population)
+dataASIA[50, 2]<-"Asia"
+dataASIA <- dataASIA [-c(1:49),]
+```
+
+AFRICA
+```{r}
+dataAFRICA <- data2 %>%
+  filter(continent2 == 'Africa')
+dataAFRICA[,-c(1,2,3,4,5,9,15,50)] = NULL
+dataAFRICA[,c(6:8)] <- sapply(dataAFRICA[c(6:8)],as.numeric)
+dataAFRICA$date <- as.Date(dataAFRICA$date, '%d/%m/%Y')
+
+dataAFRICA <- dataAFRICA %>%
+  filter(date == '2022/08/09')
+
+dataAFRICA <- dataAFRICA %>%
+  adorn_totals("row")
+
+#Calcular muertes por millón de toda la región
+
+dataAFRICA$MuerMillonRegion = ((dataAFRICA$total_deaths*1000000)/dataAFRICA$population)
+dataAFRICA[56, 2]<-"Africa"
+dataAFRICA <- dataAFRICA [-c(1:55),]
+```
+
+OCEANIA
+```{r}
+dataOCEANIA <- data2 %>%
+  filter(continent2 == 'Oceania')
+dataOCEANIA[,-c(1,2,3,4,5,9,15,50)] = NULL
+dataOCEANIA[,c(6:8)] <- sapply(dataOCEANIA[c(6:8)],as.numeric)
+dataOCEANIA$date <- as.Date(dataOCEANIA$date, '%d/%m/%Y')
+
+dataOCEANIA <- dataOCEANIA %>%
+  filter(date == '2022/08/09')
+
+dataOCEANIA <- dataOCEANIA %>%
+  adorn_totals("row")
+
+#Calcular muertes por millón de toda la región
+
+dataOCEANIA$MuerMillonRegion = ((dataOCEANIA$total_deaths*1000000)/dataOCEANIA$population)
+dataOCEANIA[17, 2]<-"Oceania"
+dataOCEANIA <- dataOCEANIA [-c(1:16),]
+```
+
+NORTE AMERICA
+```{r}
+dataAMERICAS <- data2 %>%
+  filter(continent2 == 'North America')
+dataAMERICAS[,-c(1,2,3,4,5,9,15,50)] = NULL
+dataAMERICAS[,c(6:8)] <- sapply(dataAMERICAS[c(6:8)],as.numeric)
+dataAMERICAS$date <- as.Date(dataAMERICAS$date, '%d/%m/%Y')
+
+dataAMERICAS <- dataAMERICAS %>%
+  filter(date == '2022/08/09')
+
+dataAMERICAS <- dataAMERICAS %>%
+  adorn_totals("row")
+
+#Calcular muertes por millón de toda la región
+
+dataAMERICAS$MuerMillonRegion = ((dataAMERICAS$total_deaths*1000000)/dataAMERICAS$population)
+dataAMERICAS[3, 2]<-"North America"
+dataAMERICAS <- dataAMERICAS [-c(1:2),]
+```
+
+```{r}
+dataREGIONAL=merge(dataLATAM, dataAMERICAS, all=TRUE)
+dataREGIONAL=merge(dataREGIONAL,dataAFRICA, all=TRUE)
+dataREGIONAL=merge(dataREGIONAL,dataEURO, all=TRUE)
+dataREGIONAL=merge(dataREGIONAL,dataASIA, all=TRUE)
+dataREGIONAL=merge(dataREGIONAL,dataOCEANIA, all=TRUE)
+
+rownames(dataREGIONAL)<-dataREGIONAL[,2]
+
+
+library(ggplot2)
+ggplot(dataREGIONAL, aes(x=total_deaths, y=population))+
+  geom_point()+
+  geom_text(label=rownames(dataREGIONAL))
+
+ggplot(dataREGIONAL, aes(x=MuerMillonRegion, y=population))+
+  geom_point()+
+  geom_text(label=rownames(dataREGIONAL))
+
+
+h <- dataREGIONAL$continent2
+fig3 <- plot_ly(dataREGIONAL, x=~total_deaths, y=~population, text = h, marker = list(size = 12), textposition = 'outside', color = ~continent2)
+fig3 <- fig3 %>% layout(title = 'Población vs Total de Muertos - Actualizado 09/08/2022')
+fig3 <- fig3 %>% layout(xaxis = list(title = 'Total de muertos por COVID-19'))
+fig3 <- fig3 %>% layout(yaxis = list(title = 'Población'))
+fig3 <- fig3 %>% layout(showlegend = TRUE, legend = list(font = list(size = 15)))
+#fig3 <- fig3 %>% add_annotations(x= dataREGIONAL$total_deaths, dataREGIONAL$population, text = rownames(dataREGIONAL))
+fig3
+
+#dataREGIONALT = as.data.frame(t(dataREGIONAL))
+#dataREGIONALT <- dataREGIONALT [-c(1:5),]
+
+#library(plotly)
+#fig <- plot_ly(dataREGIONAL, x = ~ano, y = ~amazonas, name = 'AMAZONAS', type = 'scatter', mode = 'point',
+#        line = list(color = 'rgb(205, 12, 24)', width = 4))
+```
+
