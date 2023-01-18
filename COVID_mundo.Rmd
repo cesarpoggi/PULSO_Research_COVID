@@ -43,12 +43,15 @@ library(rvest)
 
 url <- "https://www.worldometers.info/coronavirus/"
 
-my_tableLATAM <- url%>%read_html()%>%html_table()%>%.[[1]]
+my_tableLATAM <- url%>%
+  read_html()%>%
+  html_table()%>%.[[1]]
 
 # There are some "+" symbols and the "," 
 # for the thousand separators that we wan to remove them
 
-my_tableLATAM[]<-lapply(my_tableLATAM, function(x) (gsub("\\,|\\+", "", (x))))
+my_tableLATAM[]<-lapply(my_tableLATAM, function(x) 
+  (gsub("\\+|\\,", "", (x))))
 
 # convert all but the first and last column to numeric
 
